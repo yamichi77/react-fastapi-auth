@@ -53,4 +53,4 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
     tty: true
-    command: sh -c "cd front && npm run dev"
+    command: sh -c "cd front && npm install && npm run dev"
