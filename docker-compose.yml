@@ -1,0 +1,56 @@
+services:
+  nginx:
+    image: nginx
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - fastapi
+      - react
+      - keycloak
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_PROXY_HEADERS: "xforwarded"
+      KC_HOSTNAME: http://localhost:8080
+    ports:
+      - 8080:8080
+    volumes:
+      - ./keycloak:/opt/keycloak/data/h2
+  fastapi:
+    container_name: fastapi
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+      - "5678:5678"
+    volumes:
+      - ./fastapi:/src
+    environment:
+      - WATCHFILES_FORCE_POLLING=true
+      - KC_BASE_URL=http://localhost/auth/
+      - KC_REALM_NAME=test-realm
+      - KC_CLIENT_ID=web-app
+      - KC_CLIENT_SECRET=NBCVAXUMENN72ch6JUUzFXmUS7upQVAK
+    tty: true
+    entrypoint: ["/src/start.sh", "--dev"]
+  react:
+    container_name: react
+    build:
+      context: ./react
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./react:/app
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    tty: true
+    command: sh -c "cd front && npm run dev"
